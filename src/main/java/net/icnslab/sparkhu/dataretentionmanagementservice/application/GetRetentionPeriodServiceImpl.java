@@ -17,4 +17,11 @@ public class GetRetentionPeriodServiceImpl implements GetRetentionPeriodService 
 		String period = retentionPolicyRepository.get("retention/period");
 		return new PeriodDto(startDate, period);
 	}
+	
+	public PeriodDto changeRetentionPeriod(PeriodDto new_period) {
+		ValueOperations<String, String> retentionPolicyRepository = redisTemplate.opsForValue();
+		retentionPolicyRepository.set("retention/startDate", new_period.getStartDate());
+		retentionPolicyRepository.set("retention/period", new_period.getPeriod());
+		return new_period;
+	}
 }
