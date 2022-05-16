@@ -1,11 +1,20 @@
 package net.icnslab.sparkhu.dataretentionmanagementservice.application;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Service;
 
 @Service
 public class GetRetentionPeriodServiceImpl implements GetRetentionPeriodService {
 
+	@Autowired
+	private RedisTemplate<String, String> redisTemplate;
+	
 	public PeriodDto getRetentionPeriod() {
-		return new PeriodDto("2022-01-01", "6 months");
+		ValueOperations<String, String> retentionPolicyRepository = redisTemplate.opsForValue();
+		String startDate = retentionPolicyRepository.get("retention/startDate");
+		String period = retentionPolicyRepository.get("retention/period");
+		return new PeriodDto(startDate, period);
 	}
 }
