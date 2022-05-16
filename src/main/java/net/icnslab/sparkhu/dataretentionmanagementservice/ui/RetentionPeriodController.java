@@ -30,6 +30,6 @@ public class RetentionPeriodController {
 	public ResponseEntity<?> changePeriod(@RequestBody PeriodDto period){
 		System.out.println(period);
 		PeriodDto new_period = getRetentionPeriodService.changeRetentionPeriod(period);
-		return ResponseEntity.ok(period);
+		return ResponseEntity.ok(new_period);
 	}
 }
