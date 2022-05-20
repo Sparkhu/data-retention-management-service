@@ -6,9 +6,9 @@ public interface DataStorage {
 	
 	public List<String> list(String target);
 	
-	public void archive(String target, String dest);
+	public int archive(String target, String dest);
 	
-	public void remove(String target);
+	public boolean remove(String target, boolean recursive);
 	
 	public boolean exists(String target);
 	
