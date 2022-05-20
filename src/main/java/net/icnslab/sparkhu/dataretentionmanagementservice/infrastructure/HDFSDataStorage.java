@@ -11,7 +11,6 @@ import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.RemoteIterator;
 import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.fs.HarFileSystem;
 import org.apache.hadoop.tools.HadoopArchives;
 import org.apache.hadoop.util.ToolRunner;
 import java.net.URI;
@@ -38,28 +37,45 @@ public class HDFSDataStorage implements DataStorage{
 	
 	private String url;
 	
-	private static FileSystem fileSystem;
+	private FileSystem fileSystem;
 	
-	public HDFSDataStorage() {
-		buildUrl();
-		try {
-			fileSystem = FileSystem.get(new URI(url), new Configuration(), username);
-		} catch(Exception e) {
-			System.out.println("Error HDFS Connection failed");
+	private FileSystem getOrCreateFileSystem() {
+		if (fileSystem == null) {
+			buildUrl();
+			try {
+				
+				fileSystem = FileSystem.get(new URI(url), new Configuration(), username);
+			} catch(Exception e) {
+			      System.err.println("Error HDFS Connection failed" + e.getClass().getSimpleName());
+			      final String s = e.getLocalizedMessage();
+			      if (s != null) {
+			        System.err.println(s);
+			      } else {
+			        e.printStackTrace(System.err);
+			      }
+			}
 		}
+		return fileSystem;
 	}
 	
 	public List<String> list(String target){
 		List<String> ret = new ArrayList<>();
 		try {
-			RemoteIterator<LocatedFileStatus> fileStatusIterator = fileSystem.listFiles(new Path(target), false);
+			FileSystem fs = getOrCreateFileSystem();
+			RemoteIterator<LocatedFileStatus> fileStatusIterator = fs.listLocatedStatus(new Path(target));
 			while(fileStatusIterator.hasNext()) {
 				LocatedFileStatus fileStatus = fileStatusIterator.next();
 				ret.add(fileStatus.getPath().toString());
 			}
 			
 		} catch(Exception e) {
-			System.out.println("Error: Can't listing in the path");
+		      System.err.println("Error in HDFS listing" + e.getClass().getSimpleName());
+		      final String s = e.getLocalizedMessage();
+		      if (s != null) {
+		        System.err.println(s);
+		      } else {
+		        e.printStackTrace(System.err);
+		      }
 		}
 		return ret;
 	}
@@ -91,7 +107,7 @@ public class HDFSDataStorage implements DataStorage{
 	public boolean remove(String target, boolean recursive) {
 		boolean ret = false;
 		try {
-			ret = fileSystem.delete(new Path(target), recursive);
+			ret = getOrCreateFileSystem().delete(new Path(target), recursive);
 			
 		} catch(Exception e) {
 			System.err.println("Error in HDFS remove" + e.getClass().getSimpleName());
@@ -108,7 +124,7 @@ public class HDFSDataStorage implements DataStorage{
 	public boolean exists(String target) {
 		boolean ret = false;
 		try {
-			ret = fileSystem.exists(new Path(target));
+			ret = getOrCreateFileSystem().exists(new Path(target));
 			
 		} catch(Exception e) {
 			System.err.println("Error in HDFS check existence" + e.getClass().getSimpleName());
