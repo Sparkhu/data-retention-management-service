@@ -1,12 +1,12 @@
 package net.icnslab.sparkhu.dataretentionmanagementservice.domain;
 
-import java.util.List;
+import java.util.ArrayList;
 
 public interface DataStorage {
 	
-	public List<String> list(String target);
+	public ArrayList<String> list(String target);
 	
-	public int archive(String target, String dest);
+	public int archive(String target, String dest, boolean removeSrc);
 	
 	public boolean remove(String target, boolean recursive);
 	

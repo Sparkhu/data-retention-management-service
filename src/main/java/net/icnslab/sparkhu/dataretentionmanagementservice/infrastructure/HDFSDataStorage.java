@@ -6,6 +6,7 @@ import java.util.StringJoiner;
 import java.util.stream.Stream;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
@@ -13,6 +14,8 @@ import org.apache.hadoop.fs.RemoteIterator;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.tools.HadoopArchives;
 import org.apache.hadoop.util.ToolRunner;
+
+import java.io.IOException;
 import java.net.URI;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -37,6 +40,24 @@ public class HDFSDataStorage implements DataStorage{
 	
 	private String url;
 	
+	@Value("${yarn.resourcemanager.address}")
+	private String addrResourceManager;
+	
+	@Value("${yarn.resourcemanager.scheduler.address}")
+	private String addrResourceManagerScheduler;
+	
+	@Value("${mapreduce.jobhistory.address}")
+	private String addrHistory;
+	
+	@Value("${mapreduce.framework.name}")
+	private String mapreduceFrameworkName;
+	
+	@Value("${hadoop.home}")
+	private String HADOOP_HOME;
+	
+	@Value("${hadoop.user.name}")
+	private String HADOOP_USER_NAME;
+	
 	private FileSystem fileSystem;
 	
 	private FileSystem getOrCreateFileSystem() {
@@ -58,13 +79,14 @@ public class HDFSDataStorage implements DataStorage{
 		return fileSystem;
 	}
 	
-	public List<String> list(String target){
-		List<String> ret = new ArrayList<>();
+	public ArrayList<String> list(String target){
+		ArrayList<String> ret = new ArrayList<>();
 		try {
 			FileSystem fs = getOrCreateFileSystem();
 			RemoteIterator<LocatedFileStatus> fileStatusIterator = fs.listLocatedStatus(new Path(target));
 			while(fileStatusIterator.hasNext()) {
 				LocatedFileStatus fileStatus = fileStatusIterator.next();
+				System.out.println(fileStatus.getPath().toString());
 				ret.add(fileStatus.getPath().toString());
 			}
 			
@@ -81,25 +103,44 @@ public class HDFSDataStorage implements DataStorage{
 	}
 	
 	
-	public int archive(String target, String dest) {
+	public int archive(String target, String dest, boolean removeSrc) {
+		buildUrl();
 		JobConf job = new JobConf(HadoopArchives.class);
+		job.set("yarn.resourcemanager.address", addrResourceManager); 
+		job.set("yarn.resourcemanager.scheduler.address", addrResourceManagerScheduler);
+		job.set("mapreduce.jobhistory.address", addrHistory);
+		job.set("mapreduce.framework.name", mapreduceFrameworkName);
+		job.set("fs.default.name", url);
+		System.setProperty("HADOOP_USER_NAME", HADOOP_USER_NAME);
+		job.set ("mapreduce.app-submission.cross-platform", "true");
+		job.set ("mapreduce.app-submission.cross-platform", "true");
+		System.out.println("Hadoop home: " + HADOOP_HOME);
+		job.set("yarn.application.classpath",
+	              ",${HADOOP_HOME}/share/hadoop/common/*,${HADOOP_HOME}/share/hadoop/common/lib/*,"
+	                  + "${HADOOP_HOME}/share/hadoop/hdfs/*,${HADOOP_HOME}/share/hadoop/hdfs/lib/*,"
+	                  + "${HADOOP_HOME}/share/hadoop/mapreduce/*,${HADOOP_HOME}/share/hadoop/mapreduce/lib/*,"
+	                  + "${HADOOP_HOME}/share/hadoop/yarn/*,${HADOOP_HOME}/share/hadoop/yarn/lib/*");
 		HadoopArchives har = new HadoopArchives(job);
 		String args[] = new ArchiveArgsFactory(target, dest).build().toArray(String[]::new);
+		int a = 0;
 		int ret = 0;
 		try{
+			System.out.println(1);
 			ret = ToolRunner.run(har, args);
 		} catch(Exception e) {
-		      System.err.println("Error in HDFS archive" + e.getClass().getSimpleName());
+				System.out.println(2);
+		      System.out.println("Error in HDFS archive" + e.getClass().getSimpleName());
 		      final String s = e.getLocalizedMessage();
 		      if (s != null) {
-		        System.err.println(s);
+		        System.out.println(s);
 		      } else {
 		        e.printStackTrace(System.err);
 		      }
 		}
-		if (ret == 0) {
+		if (ret == 0 && removeSrc) {
 			ret = remove(target, true) ? 0 : 1;
 		}
+		System.out.println(3);
 		return ret;
 	}
 	
@@ -142,7 +183,7 @@ public class HDFSDataStorage implements DataStorage{
         url = scheme + "://" + host + ":" + port;
     }
 	
-	static class ArchiveArgsFactory{
+	class ArchiveArgsFactory{
 		
 		private String src;
 		private String dest;
@@ -157,8 +198,8 @@ public class HDFSDataStorage implements DataStorage{
 		    list.add("-archiveName");
 		    list.add(buildHar());
 			list.add("-p");
-			list.add(src);
-			list.add(dest);
+			list.add(url + new Path(src).toString());
+			list.add(url + dest);
 			return list.stream();
 		}
 		

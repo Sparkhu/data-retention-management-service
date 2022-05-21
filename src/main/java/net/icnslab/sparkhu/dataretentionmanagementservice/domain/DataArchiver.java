@@ -39,7 +39,7 @@ public class DataArchiver {
 				String archiveDirTarget = DataStorage.join(archiveDir, table.substring(sourceDir.length(), table.length()));
 				archiveDirTarget = DataStorage.join(archiveDirTarget, DateUtil.todayDir());
 				if(storage.exists(dailyDir)) {
-					storage.archive(dailyDir, archiveDirTarget);				
+					storage.archive(dailyDir, archiveDirTarget, true);				
 				}
 			}
 		}
