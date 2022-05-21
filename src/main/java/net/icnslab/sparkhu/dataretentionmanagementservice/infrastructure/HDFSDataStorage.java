@@ -86,7 +86,6 @@ public class HDFSDataStorage implements DataStorage{
 			RemoteIterator<LocatedFileStatus> fileStatusIterator = fs.listLocatedStatus(new Path(target));
 			while(fileStatusIterator.hasNext()) {
 				LocatedFileStatus fileStatus = fileStatusIterator.next();
-				System.out.println(fileStatus.getPath().toString());
 				ret.add(fileStatus.getPath().toString());
 			}
 			
@@ -114,7 +113,6 @@ public class HDFSDataStorage implements DataStorage{
 		System.setProperty("HADOOP_USER_NAME", HADOOP_USER_NAME);
 		job.set ("mapreduce.app-submission.cross-platform", "true");
 		job.set ("mapreduce.app-submission.cross-platform", "true");
-		System.out.println("Hadoop home: " + HADOOP_HOME);
 		job.set("yarn.application.classpath",
 	              ",${HADOOP_HOME}/share/hadoop/common/*,${HADOOP_HOME}/share/hadoop/common/lib/*,"
 	                  + "${HADOOP_HOME}/share/hadoop/hdfs/*,${HADOOP_HOME}/share/hadoop/hdfs/lib/*,"
