@@ -101,6 +101,25 @@ public class HDFSDataStorage implements DataStorage{
 		return ret;
 	}
 	
+	public ArrayList<String> getGlobPaths(String path){
+		ArrayList<String> ret = new ArrayList<>();
+		try {
+			FileSystem fs = getOrCreateFileSystem();
+			FileStatus[] fileStatuses = fs.globStatus(new Path(path));
+			for(FileStatus fileStatus: fileStatuses) {
+				ret.add(fileStatus.getPath().toString());
+			}
+		} catch(Exception e) {
+		      System.err.println("Error in HDFS getGlobPaths " + e.getClass().getSimpleName());
+		      final String s = e.getLocalizedMessage();
+		      if (s != null) {
+		        System.err.println(s);
+		      } else {
+		        e.printStackTrace(System.err);
+		      }
+		}
+		return ret;
+	}
 	
 	public int archive(String target, String dest, boolean removeSrc) {
 		buildUrl();
@@ -109,7 +128,7 @@ public class HDFSDataStorage implements DataStorage{
 		job.set("yarn.resourcemanager.scheduler.address", addrResourceManagerScheduler);
 		job.set("mapreduce.jobhistory.address", addrHistory);
 		job.set("mapreduce.framework.name", mapreduceFrameworkName);
-		job.set("fs.default.name", url);
+		job.set("fs.defaultFS", url);
 		System.setProperty("HADOOP_USER_NAME", HADOOP_USER_NAME);
 		job.set ("mapreduce.app-submission.cross-platform", "true");
 		job.set ("mapreduce.app-submission.cross-platform", "true");
@@ -123,14 +142,10 @@ public class HDFSDataStorage implements DataStorage{
 		int a = 0;
 		int ret = 0;
 		try{
-			System.out.println(1);
 			ret = ToolRunner.run(har, args);
 		} catch(Exception e) {
-				System.out.println(2);
-		      System.out.println("Error in HDFS archive" + e.getClass().getSimpleName());
 		      final String s = e.getLocalizedMessage();
 		      if (s != null) {
-		        System.out.println(s);
 		      } else {
 		        e.printStackTrace(System.err);
 		      }
@@ -138,7 +153,6 @@ public class HDFSDataStorage implements DataStorage{
 		if (ret == 0 && removeSrc) {
 			ret = remove(target, true) ? 0 : 1;
 		}
-		System.out.println(3);
 		return ret;
 	}
 	

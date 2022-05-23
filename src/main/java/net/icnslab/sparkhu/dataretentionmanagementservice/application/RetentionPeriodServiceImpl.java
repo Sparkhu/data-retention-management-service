@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import net.icnslab.sparkhu.dataretentionmanagementservice.domain.DataArchiver;
 import net.icnslab.sparkhu.dataretentionmanagementservice.domain.RetentionPeriodUtil;
 
 @Service
@@ -22,22 +23,29 @@ public class RetentionPeriodServiceImpl implements RetentionPeriodService {
 	@Autowired
 	private RedisTemplate<String, String> redisTemplate;
 	
+	@Autowired
+	private DataArchiver archiver;
+	
 	public Optional<PeriodDto> getRetentionPeriod(String _condition) {
 		ValueOperations<String, String> retentionPolicyRepository = redisTemplate.opsForValue();
 		
 		// if period is null, then no retention (persist)
 		if(_condition.equals("backup")) {
 			String period = retentionPolicyRepository.get("retention/backup/period");
-			if(period == null)
+			if(period == null) {
 				period = "no policy";
+				retentionPolicyRepository.set("retention/backup/period", period);
+			}
 			String startDate = retentionPolicyRepository.get("retention/backup/startDate");
 			String condition = "backup";
 			return Optional.ofNullable(new PeriodDto(startDate, period, condition));
 		}
 		else if(_condition.equals("disposal")){
 			String period = retentionPolicyRepository.get("retention/disposal/period");
-			if(period == null)
+			if(period == null) {
 				period = "no policy";
+				retentionPolicyRepository.set("retention/disposal/period", period);
+			}
 			String startDate = retentionPolicyRepository.get("retention/disposal/startDate");
 			String condition = "disposal";
 			return Optional.ofNullable(new PeriodDto(startDate, period, condition));
@@ -65,7 +73,7 @@ public class RetentionPeriodServiceImpl implements RetentionPeriodService {
 			if(startDate != null) {
 				retentionPolicyRepository.set("retention/backup/startDate", startDate);
 			}
-			
+			archiver.dailyArchive();
 			return new MessageDto(204, "backup period changed successfully"); 
 		}
 		else if(condition.equals("disposal")) {

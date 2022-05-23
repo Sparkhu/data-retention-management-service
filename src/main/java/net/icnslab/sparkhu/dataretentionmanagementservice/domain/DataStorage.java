@@ -6,6 +6,8 @@ public interface DataStorage {
 	
 	public ArrayList<String> list(String target);
 	
+	public ArrayList<String> getGlobPaths(String path);
+	
 	public int archive(String target, String dest, boolean removeSrc);
 	
 	public boolean remove(String target, boolean recursive);
