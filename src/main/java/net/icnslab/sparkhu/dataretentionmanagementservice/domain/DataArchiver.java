@@ -39,12 +39,9 @@ public class DataArchiver {
 	@Value("${storage.archive.dir}")
 	private String archiveDir;
 	
+	
 	@Scheduled(cron = "0 0 0 * * *")
 	@Async
-	public void archiveJob() {
-		dailyArchive();
-	}
-	
 	public void dailyArchive() {
 		ValueOperations<String, String> retentionPolicyRepository = redisTemplate.opsForValue();
 		String _period = retentionPolicyRepository.get("retention/backup/period");
