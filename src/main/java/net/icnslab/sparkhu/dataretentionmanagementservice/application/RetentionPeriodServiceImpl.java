@@ -84,6 +84,7 @@ public class RetentionPeriodServiceImpl implements RetentionPeriodService {
 				return new MessageDto(400, "invalid period, expected [num years | num months | no policy]"); 
 			}
 			retentionPolicyRepository.set("retention/disposal/period", period);
+			archiver.disposeExpiredArchives();
 			return new MessageDto(204, "disposal period changed successfully");
 		}
 		return new MessageDto(400, "invalid condition, expected condition: [backup | disposal]");

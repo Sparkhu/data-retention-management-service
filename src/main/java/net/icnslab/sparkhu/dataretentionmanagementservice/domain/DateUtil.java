@@ -27,4 +27,9 @@ public class DateUtil {
 	public static Date parseFromDir(String d) throws Exception{
 		return new SimpleDateFormat("'year'=yyyy/'month'=MM/'day'=dd").parse(d);
 	}
+	
+	public static Date parseFromHar(String d) throws Exception{
+		String target = d.substring(d.length() - 14);
+		return new SimpleDateFormat("yyyy-MM-dd.'har'").parse(target);
+	}
 }

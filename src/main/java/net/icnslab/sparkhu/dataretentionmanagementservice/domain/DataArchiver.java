@@ -7,6 +7,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -54,8 +55,22 @@ public class DataArchiver {
 				storage.archive(backup.substring(backup.indexOf(sourceDir)), archiveDir, true);
 			}
 		}
+		disposeExpiredArchives();
 	}
 	
+	@Async
+	public void disposeExpiredArchives() {
+		ValueOperations<String, String> retentionPolicyRepository = redisTemplate.opsForValue();
+		String period = retentionPolicyRepository.get("retention/disposal/period");
+		if(period != null && !period.equals("no policy")) {
+			String glob = DataStorage.join(archiveDir, "/*-[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9].har");
+			ArrayList<String> days = storage.getGlobPaths(glob);
+			List<String> toDisposal = days.stream().filter(day -> filterToDisposal.apply(day, period)).collect(Collectors.toList());
+			for(String disposal: toDisposal) {
+				storage.remove(disposal, true);
+			}
+		}
+	}
 	private void monthlyArchive() {
 
 	}
@@ -83,6 +98,22 @@ public class DataArchiver {
 			}
 			return date.before(expiry);
 		} catch(Exception e) {
+			return new Boolean(false);
+		}
+	};
+	
+	private BiFunction<String, String, Boolean>  filterToDisposal = (day, period) -> {
+		try {
+			Date date = DateUtil.parseFromHar(day.substring(day.lastIndexOf(archiveDir) + archiveDir.length()));
+			Date expiry = new Date();
+			String unit = RetentionPeriodUtil.getUnit(period);
+			if(unit.equals("months")) {
+				expiry = DateUtils.addMonths(expiry, -RetentionPeriodUtil.getNum(period));
+			} else {
+				expiry = DateUtils.addYears(expiry, -RetentionPeriodUtil.getNum(period));
+			}
+			return date.before(expiry);
+		} catch (Exception e) {
 			return new Boolean(false);
 		}
 	};
