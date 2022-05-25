@@ -19,6 +19,8 @@ public class SpringFoxConfiguration {
 	public Docket api() {
 		 
 		return new Docket(DocumentationType.OAS_30)
+				.apiInfo(apiInfo())
+				.useDefaultResponseMessages(false)
 				.select()
 				.apis(RequestHandlerSelectors.any())
 				.paths(PathSelectors.any())
@@ -28,7 +30,7 @@ public class SpringFoxConfiguration {
 	private ApiInfo apiInfo() {
 		String description = "Data retention management service in Sparkhu";
 		return new ApiInfoBuilder()
-				.title("Swagger drms-sparkhu")
+				.title("Swagger data-retention-management-sparkhu")
 				.description(description)
 				.version("1.0")
 				.build();
