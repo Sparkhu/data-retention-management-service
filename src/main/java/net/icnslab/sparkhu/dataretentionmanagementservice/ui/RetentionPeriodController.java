@@ -28,6 +28,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 @RestController
@@ -46,8 +47,8 @@ public class RetentionPeriodController {
 		@ApiResponse(responseCode = "400", description = "Bad Request")
 	})
 	@GetMapping("/retention/period")
-	public ResponseEntity<?> getPeriod(@RequestBody @JsonView(PeriodView.Retrieve.class) PeriodDto condition){
-		Optional<PeriodDto> period = retentionPeriodService.getRetentionPeriod(condition.getCondition());
+	public ResponseEntity<?> getPeriod(@RequestParam("condition") String condition){
+		Optional<PeriodDto> period = retentionPeriodService.getRetentionPeriod(condition);
 		if(period.isPresent()) {
 			if(period.get().getCondition().equals("backup")) {
 				return ResponseEntity.ok(period);
